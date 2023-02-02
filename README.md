@@ -11,3 +11,6 @@ Google Sheets API based app for helping me track when I take my meds
 **gspread**
 
 ```pip install gspread```
+
+### And a moment of silence for the roughly anything in the mathematical interval [18,36] commits lots to a git push --force
+![prayge](https://i.kym-cdn.com/photos/images/newsfeed/002/306/879/716.png)
