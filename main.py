@@ -1,9 +1,17 @@
 import gspread
+# Python cmd module for creating custom command line interpreters.
 import cmd
 
 import oshutil
 
-# End User OAuth Client for all spreadsheets
+# =-=-= End User OAuth Client for all spreadsheets
+# Requires a 'credentials.json' file to be present in '%appdata%\gspread' (Roaming folder), otherwise it might throw a
+# FileNotFoundError.
+# IMPORTANT NOTE: The JSON file obtained from Google Cloud console's 'IAM and admin' > 'Service accounts' > 'Keys' >
+# 'Add key' (and/or something with 'Manage service accounts' > [Something about 'MedSheet357']) will NOT work and will
+# likely throw a 'ValueError: Client secrets must be for a web or installed app.'.
+# The JSON required for gspread & Google Sheets integration can be found under 'APIs and services' > 'Credentials' >
+# 'OAuth 2.0 Client IDs' > 'Actions' tab > {Download icon} ('Download OAuth client') > 'DOWNLOAD JSON'.
 gc = gspread.oauth()
 
 
@@ -14,6 +22,7 @@ def map_column(col):
     return column_ids.index(col.upper()) + 1
 
 
+# For cmd implementation reference best go to: https://docs.python.org/3/library/cmd.html
 class MedSheet(cmd.Cmd):
     intro = '\n'.join(['MedSheet357 command line shell.',
                        'For assisting tracking medicine intake via Google Sheets API.',
@@ -21,33 +30,38 @@ class MedSheet(cmd.Cmd):
                        ])
     prompt = '> '
 
-    # Default implementation repeats last command. This overrides that to do nothing.
+    # Default implementation repeats last command when an empty line is entered 'as a command'. This overrides that
+    # to do nothing in case I accidentally mess something up (remote sheet control can be fragile).
     def emptyline(self) -> bool:
         return
 
+    # 'osh' command
     def do_osh(self, line):
         'Manage origin spreadsheet.'
-        sline = line.split()
-        if sline[0] in {'getincidents', 'getinc'}:
+        # TODO: Describe the "subcommand" functionality (maybe research how other CLIs do it too).
+        sline = line.split()  # Split the line string into a list (default separator is whitespace ' ').
+        if sline[0] in {'getincidents', 'getinc'}:  # oshutil.py/getincidents(bool) -> list
             if len(sline) == 1:
                 oshutil.getincidents(False)
+                # print(oshutil.getincidents(False))
             elif len(sline) > 1 and sline[1] in {"--print", "--pr", "--p"}:
                 oshutil.getincidents(True)
-        elif sline[0] in {'getiddata', 'getdata'}:
+        elif sline[0] in {'getiddata', 'getdata'}:  # oshutil.py/getiddata(bool) -> list
             if len(sline) == 1:
                 oshutil.getiddata(False)
+                # print(oshutil.getiddata(False))
             elif len(sline) > 1 and sline[1] in {"--print", "--pr", "--p"}:
                 oshutil.getiddata(True)
-        elif sline[0] in {'validateincidents', 'validateinc'}:
+        elif sline[0] in {'transformincidents', 'transforminc'}:
             if len(sline) == 1:
-                oshutil.validateincidents()
+                oshutil.transformincidents()
             elif len(sline) > 1 and sline[1] in {"--print", "--pr", "--p"}:
-                oshutil.validateincidents()
-        elif sline[0] in {'validateiddata', 'validatedata'}:
+                oshutil.transformincidents()
+        elif sline[0] in {'transformiddata', 'transformdata'}:
             if len(sline) == 1:
-                oshutil.validateiddata(False)
+                oshutil.transformiddata(False)
             elif len(sline) > 1 and sline[1] in {"--print", "--pr", "--p"}:
-                oshutil.validateiddata(True)
+                oshutil.transformiddata(True)
         elif sline[0] in {'getmeds', 'listmeds'}:
             if len(sline) == 1:
                 print(oshutil.getmeds(False))
@@ -67,7 +81,8 @@ class MedSheet(cmd.Cmd):
                 if choice.lower() == 'y':
                     print('where doing it man\nwhere MAKING THIS HAPEN')
                     return
-                elif choice.lower() == 'n':
+                elif choice.lower() in {'n', ''}:  # N being capital means it's the default option
+                    print('Spreadsheet creation has been cancelled.')
                     return
             except ValueError:
                 pass
