@@ -4,13 +4,45 @@ import re
 
 import main
 
-sh_origin = main.gc.open("The Plan")  # This is the "origin sheet" on my Google Drive.
+sh_origin = main.gc.open('The Pillsheet')  # This is the "origin sheet" on my Google Drive.
+
+
+# Get data from the "standard worksheet" on expected pill; worksheet contains names of all tracked meds, their
+# identifiers, optional date at which they are to start getting taken, optional dosage information, dosage change
+# info & date of each alteration, optional expected intake hours and changes in said intake hours
+def getstd():
+    worksheet = sh_origin.get_worksheet(1)
+    # TODO, plans: Row 1 & 2 irrelevant
+    # column A: medname -> string
+    # column B: medid -> string
+    # column C: hasstartenddates -> boolean
+    # column D: startenddates -> tuple (of dates & a "start-or-end" variable)
+    #   empty if colD is False
+    # column E: hasdosage -> boolean
+    # column F: dosagechanges -> dictionary (of change date & dosage strings)
+    #   empty if colE is False
+    # column G: hasexpectedhours -> boolean
+    #   expected hours that are currently in use; latest date tuple from expectedhourchanges
+    # column H: expectedhours -> tuple (of hours)
+    #   empty if colG is False
+    # column I: expectedhourchanges -> dictionary (of change date & hour tuple tuples)
+    #   empty if colG is False
+    # put everything in a correct separate variables
+    val = worksheet.acell('A1').value
+    print(val)
+    dicttest = dict()
+    dicttest = {'28/08/2020': ('10:00', '16:00', '23:00'), '09/02/2023': ('8:30', '16:00', '23:30')}
+    dicttest2 = dict()
+    dicttest2 = {'07/05/2022': 'x2', '09/10/2022': '/2'}
+    print(dicttest)
+    print(dicttest2)
+    pass
 
 
 # Get data from the "incidents" column in original sheet.
 # The incidents column stores data on hours & minutes of intake of each medicine in the system.
 def getincidents(printmode) -> list:
-    worksheet = sh_origin.sheet1
+    worksheet = sh_origin.get_worksheet(0)
     dates = worksheet.col_values(main.map_column('A'))  # Get dates from the A column in origin sheet
     weekdays = worksheet.col_values(main.map_column('B'))  # Get weekdays from the B column in the origin sheet
     datalist = list()  # Initialize an empty list to later return
@@ -44,7 +76,7 @@ def getincidents(printmode) -> list:
 # Get data from the "ID data" column in original sheet.
 # The ID data column stores weird ID data that tries to give every single pill a "statistical" identifier.
 def getiddata(printmode):
-    worksheet = sh_origin.sheet1
+    worksheet = sh_origin.get_worksheet(0)
     dates = worksheet.col_values(main.map_column('A'))  # Get dates from the A column in origin sheet
     weekdays = worksheet.col_values(main.map_column('B'))  # Get weekdays from the B column in the origin sheet
     datalist = list()  # Initialize an empty list to later return
@@ -160,7 +192,7 @@ def transformiddata(printmode):
 def getmeds(printmode):
     # NOTE: gspread's get() returns cell data in a matrix, implemented as a list of lists. Example:
     # [['Iboobprofen']]
-    worksheet = sh_origin.sheet1
+    worksheet = sh_origin.get_worksheet(0)
 
     if printmode:
         print(worksheet.get("C1")[0][0])
@@ -174,7 +206,7 @@ def getmeds(printmode):
 #  gotta manually clean up some data. Both the "intake standards" and the old incidents (spare yourself from ID data tho
 #  pls plz plssss plzzzzzzzz)
 def getmedinfo(printmode):
-    worksheet = sh_origin.sheet1
+    worksheet = sh_origin.get_worksheet(0)
     dates = worksheet.col_values(main.map_column('A'))  # Get dates from the A column in origin sheet
     weekdays = worksheet.col_values(main.map_column('B'))  # Get weekdays from the B column in origin sheet
 

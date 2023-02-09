@@ -12,7 +12,9 @@ import oshutil
 # likely throw a 'ValueError: Client secrets must be for a web or installed app.'.
 # The JSON required for gspread & Google Sheets integration can be found under 'APIs and services' > 'Credentials' >
 # 'OAuth 2.0 Client IDs' > 'Actions' tab > {Download icon} ('Download OAuth client') > 'DOWNLOAD JSON'.
-gc = gspread.oauth()
+# 09/02/2023 - gspread updated the authentication method, now .service_account() is used instead of .oauth()
+# Also I needed a service_account.json from the "Manage service accounts thingy" anyway.
+gc = gspread.service_account()
 
 
 # Maps column letters to numerical values used by some gspread methods
@@ -72,6 +74,8 @@ class MedSheet(cmd.Cmd):
                 print(oshutil.getmedinfo(False))
             elif len(sline) > 1 and sline[1] in {"--print", "--pr", "--p"}:
                 oshutil.getmedinfo(True)
+        elif sline[0] == 'getstd':
+            oshutil.getstd()
 
     def do_createsh(self, line):
         'Creates a new spreadsheet.'
