@@ -1,7 +1,8 @@
 # TODO TODELETE git unfucker comment i have no time dude I98RTGJUIRTOEWRTHUIERJ
 # =-=-=-= Origin sheet utilities (so specialized for my own old Google Sheet)
-# Python RegEx module
-import re
+import numpy as np
+
+import re  # Python RegEx module
 
 import main
 
@@ -29,15 +30,13 @@ def getstd():
     # column I: expectedhourchanges -> dictionary (of change date & hour tuple tuples)
     #   empty if colG is False
     # put everything in a correct separate variables
-    val = worksheet.acell('A1').value
-    print(val)
-    dicttest = dict()
-    dicttest = {'28/08/2020': ('10:00', '16:00', '23:00'), '09/02/2023': ('8:30', '16:00', '23:30')}
-    dicttest2 = dict()
-    dicttest2 = {'07/05/2022': 'x2', '09/10/2022': '/2'}
-    print(dicttest)
-    print(dicttest2)
-    pass
+    osh_standard = np.array(worksheet.get_all_values()[2:], ndmin=2)
+    # print(osh_standard[1][3])
+    for elem in np.nditer(osh_standard):
+        print(elem)  # TODO: https://numpy.org/doc/stable/reference/arrays.nditer.html#arrays-nditer
+        # TODO: then put it into a list/dictionary to return
+
+    return []  # TODO idea: return a list of all data you get from the standard sheet
 
 
 # Get data from the "incidents" column in original sheet.
@@ -253,4 +252,5 @@ def getmedinfo(printmode):
 # For future .csv import-export functionality.
 # Exports data from spreadsheet into [Google Sheet/variable in memory].
 def exportoshtocsv():
+    # TODO: Learn pandas for this lol
     pass
