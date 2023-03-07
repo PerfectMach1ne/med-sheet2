@@ -1,4 +1,3 @@
-# TODO TODELETE git unfucker comment i have no time dude I98RTGJUIRTOEWRTHUIERJ
 # =-=-=-= Origin sheet utilities (so specialized for my own old Google Sheet)
 import numpy as np
 
