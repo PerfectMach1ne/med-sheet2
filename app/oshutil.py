@@ -1,11 +1,11 @@
 # =-=-=-= Origin sheet utilities (so specialized for my own old Google Sheet)
-import numpy as np
-
 import re  # Python RegEx module
 
-import main
+import numpy as np
 
-sh_origin = main.gc.open('The Pillsheet')  # This is the "origin sheet" on my Google Drive.
+import gauth, utils
+
+sh_origin = gauth.gc.open('The Pillsheet')  # This is the "origin sheet" on my Google Drive.
 
 
 # Get data from the "standard worksheet" on expected pill; worksheet contains names of all tracked meds, their
@@ -13,40 +13,86 @@ sh_origin = main.gc.open('The Pillsheet')  # This is the "origin sheet" on my Go
 # info & date of each alteration, optional expected intake hours and changes in said intake hours
 def getstd():
     worksheet = sh_origin.get_worksheet(1)
-    # TODO, plans: Row 1 & 2 irrelevant
-    # column A: medname -> string
-    # column B: medid -> string
-    # column C: hasstartenddates -> boolean
-    # column D: startenddates -> tuple (of dates & a "start-or-end" variable)
-    #   empty if colD is False
-    # column E: hasdosage -> boolean
-    # column F: dosagechanges -> dictionary (of change date & dosage strings)
-    #   empty if colE is False
-    # column G: hasexpectedhours -> boolean
-    #   expected hours that are currently in use; latest date tuple from expectedhourchanges
-    # column H: expectedhours -> tuple (of hours)
-    #   empty if colG is False
-    # column I: expectedhourchanges -> dictionary (of change date & hour tuple tuples)
-    #   empty if colG is False
-    # put everything in a correct separate variables
-    osh_standard = np.array(worksheet.get_all_values()[2:], ndmin=2)
-    # print(osh_standard[1][3])
-    for elem in np.nditer(osh_standard):
-        print(elem)  # TODO: https://numpy.org/doc/stable/reference/arrays.nditer.html#arrays-nditer
-        # TODO: then put it into a list/dictionary to return
 
-    return []  # TODO idea: return a list of all data you get from the standard sheet
+    # =-= The data model/"model" of the standard sheet
+    # column A -> MEDNAME: string
+    # column B -> MEDID: string
+    # column C -> HASSTARTENDDATES: boolean
+    # column D -> STARTENDDATES: tuple (of a start date & an end date)
+    #   Tuple (pair) of empty strings if STARTENDDATES is False == ('','')
+    # column E -> HASDOSAGE: boolean
+    # column F -> DOSAGECHANGES: dictionary (of change date & dosage strings)
+    #   Empty dictionary if HASDOSAGE is False
+    # column G -> HASEXPECTEDHOURS: boolean
+    # column H -> EXPECTEDHOURS: tuple (of hours)
+    #   Expected hours that are currently in use; latest date tuple from EXPECTEDHOURCHANGES
+    #   empty if HASEXPECTEDHOURS is False
+    # column I -> EXPECTEDHOURCHANGES: dictionary (of change date strings & hour tuple string tuples)
+    #   empty if HASEXPECTEDHOURS is False
+
+    # Get standard sheet data and put it in a numpy array (without the headers & data format descriptions)
+    osh_standard = np.array(worksheet.get_all_values()[2:], ndmin=2)
+
+    # nditer(): https://numpy.org/doc/stable/reference/arrays.nditer.html#arrays-nditer
+    # Iterate over the standard array and extract data
+    # Multi-index helps with operating on rows & columns of "two-dimensional data" from a spreadsheet
+    with np.nditer(osh_standard, flags=['multi_index']) as it:
+        # current_row: Union[int, None] = None  <- this is how I can do this pre-Python 3.10
+        # But since we're on Python 3.10, let's initialize this variable as None with a new PEP 604 feature:
+        current_row: int | None = None
+        return_dict = dict()
+        current_key = str()
+        while not it.finished:
+            # it.multi_index[0] represents rows
+            # it.multi_index[1] represents columns
+            # it[0] is the data stored inside the cell in current iteration
+            current_cell = it[0]
+            current_col = it.multi_index[1]
+            if current_row is None:
+                current_row = it.multi_index[0]
+            elif current_row != it.multi_index[0]:  # Update current_row if it changes
+                current_row = it.multi_index[0]
+            if current_col == 0:  # If current column is MEDNAME
+                # Convert cell data to string, or else it'll throw an error or return a 1-element NumPy array
+                current_key = str(current_cell)
+                # Create a return dictionary element with MEDNAME as the key and a list for other cell data as value
+                return_dict[current_key] = list()  # Create an empty list for a given key (medname)
+            else:
+                # Append a cell value for the specified key to its' list from the dictionary
+                # ... also convert cell data to string, or else it'll throw an error or return a 1-element NumPy array
+                # TODO: yeet this variable
+                tmppass = lambda: return_dict[current_key].append(str(current_cell))
+                # TODO: format data that is not supposed to be a string
+                if current_col == 3:  # Parse STARTENDDATES (pair tuple of date strings)
+                    tmppass()
+                elif current_col in (2, 4, 6):  # Parse boolean values
+                    return_dict[current_key].append(bool(current_cell))
+                elif current_col == 5:  # Parse DOSAGECHANGES ({'date': 'dosage string'} format dictionary)
+                    tmppass()
+                elif current_col == 7:  # Parse EXPECTEDHOURS (tuple of hour strings)
+                    tmppass()
+                elif current_col == 8:  # Parse EXPECTEDHOURCHANGES ({'date': tuple of hour strings} format dictionary)
+                    tmppass()
+                else:
+                    return_dict[current_key].append(str(current_cell))
+            is_not_finished = it.iternext()
+        # Other way I could have looped through this:
+        # for cell in it:
+        #     print(f"{cell} @ {it.multi_index[0]}")
+
+    print(return_dict)
+    return return_dict
 
 
 # Get data from the "incidents" column in original sheet.
 # The incidents column stores data on hours & minutes of intake of each medicine in the system.
 def getincidents(printmode) -> list:
     worksheet = sh_origin.get_worksheet(0)
-    dates = worksheet.col_values(main.map_column('A'))  # Get dates from the A column in origin sheet
-    weekdays = worksheet.col_values(main.map_column('B'))  # Get weekdays from the B column in the origin sheet
+    dates = worksheet.col_values(utils.map_column('A'))  # Get dates from the A column in origin sheet
+    weekdays = worksheet.col_values(utils.map_column('B'))  # Get weekdays from the B column in the origin sheet
     datalist = list()  # Initialize an empty list to later return
 
-    incidents = worksheet.col_values(main.map_column('Y'))  # Get incidents from the Y column in the origin sheet
+    incidents = worksheet.col_values(utils.map_column('Y'))  # Get incidents from the Y column in the origin sheet
     for date, weekday, incident in zip(dates, weekdays, incidents):
         # zip() iterates over several iterables in parallel using tuples in this use case.
         # But zip() specifically takes iterables (any structure you can iterate over) and aggregates each of their
@@ -76,11 +122,11 @@ def getincidents(printmode) -> list:
 # The ID data column stores weird ID data that tries to give every single pill a "statistical" identifier.
 def getiddata(printmode):
     worksheet = sh_origin.get_worksheet(0)
-    dates = worksheet.col_values(main.map_column('A'))  # Get dates from the A column in origin sheet
-    weekdays = worksheet.col_values(main.map_column('B'))  # Get weekdays from the B column in the origin sheet
+    dates = worksheet.col_values(utils.map_column('A'))  # Get dates from the A column in origin sheet
+    weekdays = worksheet.col_values(utils.map_column('B'))  # Get weekdays from the B column in the origin sheet
     datalist = list()  # Initialize an empty list to later return
 
-    iddata = worksheet.col_values(main.map_column('Z'))  # # Get ID data from the Z column in the origin sheet
+    iddata = worksheet.col_values(utils.map_column('Z'))  # # Get ID data from the Z column in the origin sheet
     for date, weekday, data in zip(dates, weekdays, iddata):
         # What zip() does exactly has been explained in a getincidents() comment.
         if printmode:
@@ -101,7 +147,7 @@ def getiddata(printmode):
 # Transform incident data from getincidents() into "functionally useful" data.
 def transformincidents():
     inclist = getincidents(False)  # Get a list of incidents (printmode == False)
-    inclist.pop(0) # Remove the index with redundant label cell data
+    inclist.pop(0)  # Remove the index with redundant label cell data
     for inc in inclist:
         # According to the standard, here's what each of the 3 incident formats mean with examples:
         # E2=16:17 - 2nd Estradiol pill taken at 16:17
@@ -206,8 +252,8 @@ def getmeds(printmode):
 #  pls plz plssss plzzzzzzzz)
 def getmedinfo(printmode):
     worksheet = sh_origin.get_worksheet(0)
-    dates = worksheet.col_values(main.map_column('A'))  # Get dates from the A column in origin sheet
-    weekdays = worksheet.col_values(main.map_column('B'))  # Get weekdays from the B column in origin sheet
+    dates = worksheet.col_values(utils.map_column('A'))  # Get dates from the A column in origin sheet
+    weekdays = worksheet.col_values(utils.map_column('B'))  # Get weekdays from the B column in origin sheet
 
     if printmode:
         print(12 * '=')
@@ -249,7 +295,7 @@ def getmedinfo(printmode):
 
 
 # For future .csv import-export functionality.
-# Exports data from spreadsheet into [Google Sheet/variable in memory].
+# Exports data from a CSV file into [Google Sheet/variable in memory].
 def exportoshtocsv():
     # TODO: Learn pandas for this lol
     pass
