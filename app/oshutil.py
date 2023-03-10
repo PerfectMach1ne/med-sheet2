@@ -64,15 +64,16 @@ def getstd():
                 tmppass = lambda: return_dict[current_key].append(str(current_cell))
                 # TODO: format data that is not supposed to be a string
                 if current_col == 3:  # Parse STARTENDDATES (pair tuple of date strings)
-                    tmppass()
+                    return_dict[current_key].append(utils.stotup(str(current_cell)))
                 elif current_col in (2, 4, 6):  # Parse boolean values
                     return_dict[current_key].append(bool(current_cell))
                 elif current_col == 5:  # Parse DOSAGECHANGES ({'date': 'dosage string'} format dictionary)
-                    tmppass()
+                    return_dict[current_key].append(utils.stotup(str(current_cell)))
                 elif current_col == 7:  # Parse EXPECTEDHOURS (tuple of hour strings)
-                    tmppass()
+                    return_dict[current_key].append(utils.stodict(str(current_cell)))
                 elif current_col == 8:  # Parse EXPECTEDHOURCHANGES ({'date': tuple of hour strings} format dictionary)
-                    tmppass()
+                    # tmppass()
+                    return_dict[current_key].append(utils.stodict(str(current_cell)))
                 else:
                     return_dict[current_key].append(str(current_cell))
             is_not_finished = it.iternext()

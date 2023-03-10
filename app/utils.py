@@ -5,17 +5,9 @@ def map_column(col):
     return column_ids.index(col.upper()) + 1
 
 
-def stotupdts():  # string to tuple of date strings
-    pass
+def stotup(string: str) -> tuple:  # string to tuple
+    return eval(string)
 
 
-def stotuphrs():  # string to tuple of hour strings
-    pass
-
-
-def stodict():  # string to dictionary
-    pass
-
-
-def stodicttuphrs():  # string to dictionary of tuples of hour strings
-    pass
+def stodict(string: str) -> dict:  # string to dictionary
+    return eval(string)
