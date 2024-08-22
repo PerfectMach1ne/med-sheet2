@@ -1,4 +1,5 @@
-# MedSheet
+# MedSheet 2
+### 2024-08-22 note: the project is in progress of being revived!
 Google Sheets API based app for helping me track when I take my meds
 ### Current plans
 - [ ] Specialized interpreter for my current Google Sheet (referred to as the "origin sheet")
